@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Akka.Serialization.MessagePack\Akka.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\Akka.Serialization.MessagePack.FSharp\Akka.Serialization.MessagePack.FSharp.csproj" />
     <ProjectReference Include="..\Akka.Serialization.Testkit\Akka.Serialization.Testkit.csproj" />
   </ItemGroup>
 

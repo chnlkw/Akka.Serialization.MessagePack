@@ -68,11 +68,11 @@ namespace Akka.Serialization.MessagePack.FSharp
         {
             if (_settings.EnableLz4Compression)
             {
-                return LZ4MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
+                return LZ4MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
             }
             else
             {
-                return MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
+                return MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
             }
         }
 
