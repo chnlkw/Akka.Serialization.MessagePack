@@ -50,29 +50,17 @@ namespace Akka.Serialization.MessagePack.FSharp
             _settings = settings;
         }
 
-        private Type GetTypeForSerializer(object obj)
-        {
-            var t = obj.GetType();
-            if (FSharpType.IsUnion(t, null))
-            {
-                if (FSharpType.IsUnion(t.BaseType, null))
-                {
-                    return t.BaseType;
-                }
-            }
-
-            return t;
-        }
-
         public override byte[] ToBinary(object obj)
         {
+            Type t = obj.GetType(); 
+
             if (_settings.EnableLz4Compression)
             {
-                return LZ4MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                return LZ4MessagePackSerializer.NonGeneric.Serialize(t, obj);
             }
             else
             {
-                return MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                return MessagePackSerializer.NonGeneric.Serialize(t, obj);
             }
         }
 

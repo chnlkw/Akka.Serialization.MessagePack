@@ -15,9 +15,15 @@ open Akka.Serialization.MessagePack.FSharp
 
 [<MessagePackObject>]
 type SimpleUnion =
-  | A
+  | A of unit
   | B of int
-  | C of int64 * float32
+  | C of int * float
+
+[<MessagePackObject>]
+type ArgumentedUnion =
+  | AA of AA : unit
+  | AB of AB : int
+  | AC of AC1 : int * AC2 : float
   
 [<Struct; MessagePackObject>]
 type StructUnion =
@@ -41,6 +47,13 @@ type Tree =
   | Node of Tree * Tree
 
 type StringKeyUnion = | D of Prop : int
+
+[<Fact>]
+let ``DU instance type`` () =
+    let a = A
+    Assert.Equal(typeof<SimpleUnion>, a.GetType().BaseType)
+    let aa = AA ()
+    Assert.Equal(typeof<ArgumentedUnion>, aa.GetType().BaseType)
 
 [<AbstractClass>]
 type FSharpTests(serializerType : Type) =
@@ -68,10 +81,19 @@ type FSharpTests(serializerType : Type) =
 
     [<Fact>]
     member __.``Can Serialize Simple DU Using Base MsgPackFSharp`` () =
+        chk <| A ()
+        chk1 <| A ()
         chk <| B 100
         chk1 <| B 100
-        chk A
-        chk1 A
+
+    [<Fact>]
+    member __.``Can Serialize Argumented DU Using Base MsgPackFSharp`` () =
+        chk  <| AA ()
+        chk1 <| AA ()
+        chk  <| AB 100
+        chk1 <| AB 100
+        chk  <| AC (100, 1.0)
+        chk1 <| AC (100, 1.0)
 
     [<Fact>]
     member __.``Can Serialize Simple Record Using Base MsgPackFSharp`` () =
@@ -81,13 +103,22 @@ type FSharpTests(serializerType : Type) =
     [<Fact>]
     member __.``Can Serialize Simple DU`` () =
 
-        __.check A
+        __.check <| A ()
         __.check <| B 100
-        __.check <| C(99999999L, -123.43f)
+        __.check <| C(99999999, -123.43)
 
-        
     [<Fact>]
-    member __.``string key`` () =
+    member __.``Can Serialize Argumented DU`` () =
+         __.check <| AA ()
+         __.check <| AA ()
+         __.check <| AB 100
+         __.check <| AB 100
+         __.check <| AC (100, 1.0)
+         __.check <| AC (100, 1.0)
+
+
+    [<Fact>]
+    member __.``DU string key`` () =
         __.check <| D 1
 
     [<Fact>]
@@ -109,6 +140,9 @@ type FSharpTests(serializerType : Type) =
 
 type MsgPackFSharpTests() =
     inherit FSharpTests(typeof<MsgPackFSharpSerializer>)
+
+type MsgPackTests_MUST_RUN_STANDALONE_WITHOUT_MsgPackFSharpTests() =
+    inherit FSharpTests(typeof<MsgPackSerializer>)
 
 //type MessagePackFSharpTests() =
 //    let chk (x: 'a) =
