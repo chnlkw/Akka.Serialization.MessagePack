@@ -12,6 +12,7 @@ using Akka.Serialization.MessagePack.Resolvers;
 using MessagePack;
 using MessagePack.ImmutableCollection;
 using MessagePack.Resolvers;
+using MessagePack.FSharp;
 
 namespace Akka.Serialization.MessagePack
 {
@@ -28,7 +29,9 @@ namespace Akka.Serialization.MessagePack
 #endif
                 AkkaResolver.Instance,
                 ImmutableCollectionResolver.Instance,
-                TypelessContractlessStandardResolver.Instance);
+                FSharpResolver.Instance,
+                TypelessContractlessStandardResolver.Instance
+                );
         }
 
         public MsgPackSerializer(ExtendedActorSystem system) : this(system, MsgPackSerializerSettings.Default)
