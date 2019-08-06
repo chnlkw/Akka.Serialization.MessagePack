@@ -18,7 +18,7 @@ type FsharpTests(serializerType : Type) =
     inherit TestKit(ConfigFactory.GetConfig(serializerType))
 
     member __.check (x:'a) =
-        let serializer = base.Sys.Serialization.FindSerializerFor x
+        let serializer = base.Sys.Serialization.FindSerializerForType typeof<'a>
         let bytes = serializer.ToBinary x
         let y : 'a = serializer.FromBinary<'a> bytes
         Assert.Equal<'a>(x, y)
@@ -30,16 +30,17 @@ type FsharpTests(serializerType : Type) =
     [<Fact>]
     member __.``Can Serialize Simple DU Using Base MsgPackFSharp`` () =
         let chk (x: 'a) =
-            let bin = MessagePackSerializer.NonGeneric.Serialize(x.GetType(), x)
-            let y : 'a = MessagePackSerializer.NonGeneric.Deserialize(x.GetType(), bin) :?> 'a
+            let bin = MessagePackSerializer.Serialize(x)
+            let y : 'a = MessagePackSerializer.Deserialize<'a>(bin)
             Assert.Equal<'a>(x, y)
-        let chk2 (x: 'a) =
-            let bin = MessagePackSerializer.Typeless.Serialize(x)
-            let y : 'a = MessagePackSerializer.Typeless.Deserialize(bin) :?> 'a
+        let chk1 (x: 'a) =
+            let bin = MessagePackSerializer.NonGeneric.Serialize(typeof<'a>, x)
+            let y : 'a = MessagePackSerializer.NonGeneric.Deserialize(typeof<'a>, bin) :?> 'a
             Assert.Equal<'a>(x, y)
-        chk2 A
-        chk2 A
-        chk2 <| B 100
+        chk A
+        chk1 A
+        chk <| B 100
+        chk1 <| B 100
 
     [<Fact>]
     member __.``Can Serialize Simple DU`` () =

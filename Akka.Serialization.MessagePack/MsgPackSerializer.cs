@@ -13,6 +13,7 @@ using MessagePack;
 using MessagePack.ImmutableCollection;
 using MessagePack.Resolvers;
 using MessagePack.FSharp;
+using Microsoft.FSharp.Reflection;
 
 namespace Akka.Serialization.MessagePack
 {
@@ -49,15 +50,34 @@ namespace Akka.Serialization.MessagePack
             _settings = settings;
         }
 
+        private Type GetTypeForSerializer(object obj)
+        {
+            var t = obj.GetType();
+            if (FSharpType.IsUnion(t, null))
+            {
+#if NETSTANDARD2_0
+                if (FSharpType.IsUnion(t.BaseType, null))
+                {
+                    return t.BaseType;
+                }
+#else
+                throw new NotSupportedException(string.Format("Cannot get the BaseType of {0}", t));
+#endif
+            }
+
+            return t;
+        }
+
         public override byte[] ToBinary(object obj)
         {
             if (_settings.EnableLz4Compression)
             {
-                return LZ4MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                return LZ4MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
             }
             else
             {
-                return MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                var t = obj.GetType();
+                return MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
             }
         }
 
