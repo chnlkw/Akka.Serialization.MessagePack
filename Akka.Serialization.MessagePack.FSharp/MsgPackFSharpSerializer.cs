@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="MsgPackSerializer.cs" company="Akka.NET Project">
+// <copyright file="MsgPackFSharpSerializer.cs" company="Akka.NET Project">
 //     Copyright (C) 2017 Akka.NET Contrib <https://github.com/AkkaNetContrib/Akka.Serialization.MessagePack>
 // </copyright>
 //-----------------------------------------------------------------------
@@ -15,14 +15,14 @@ using MessagePack.Resolvers;
 using MessagePack.FSharp;
 using Microsoft.FSharp.Reflection;
 
-namespace Akka.Serialization.MessagePack
+namespace Akka.Serialization.MessagePack.FSharp
 {
-    public sealed class MsgPackSerializer : Serializer
+    public sealed class MsgPackFSharpSerializer : Serializer
     {
         internal static AsyncLocal<ActorSystem> LocalSystem = new AsyncLocal<ActorSystem>();
         private readonly MsgPackSerializerSettings _settings;
 
-        static MsgPackSerializer()
+        static MsgPackFSharpSerializer()
         {
             CompositeResolver.RegisterAndSetAsDefault(
 #if SERIALIZATION
@@ -30,35 +30,49 @@ namespace Akka.Serialization.MessagePack
 #endif
                 AkkaResolver.Instance,
                 ImmutableCollectionResolver.Instance,
+                FSharpResolver.Instance,
                 TypelessContractlessStandardResolver.Instance
                 );
         }
 
-        public MsgPackSerializer(ExtendedActorSystem system) : this(system, MsgPackSerializerSettings.Default)
+        public MsgPackFSharpSerializer(ExtendedActorSystem system) : this(system, MsgPackSerializerSettings.Default)
         {
         }
 
-        public MsgPackSerializer(ExtendedActorSystem system, Config config) 
+        public MsgPackFSharpSerializer(ExtendedActorSystem system, Config config) 
             : this(system, MsgPackSerializerSettings.Create(config))
         {
         }
 
-        public MsgPackSerializer(ExtendedActorSystem system, MsgPackSerializerSettings settings) : base(system)
+        public MsgPackFSharpSerializer(ExtendedActorSystem system, MsgPackSerializerSettings settings) : base(system)
         {
             LocalSystem.Value = system;
             _settings = settings;
+        }
+
+        private Type GetTypeForSerializer(object obj)
+        {
+            var t = obj.GetType();
+            if (FSharpType.IsUnion(t, null))
+            {
+                if (FSharpType.IsUnion(t.BaseType, null))
+                {
+                    return t.BaseType;
+                }
+            }
+
+            return t;
         }
 
         public override byte[] ToBinary(object obj)
         {
             if (_settings.EnableLz4Compression)
             {
-                return LZ4MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                return LZ4MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
             }
             else
             {
-                var t = obj.GetType();
-                return MessagePackSerializer.NonGeneric.Serialize(obj.GetType(), obj);
+                return MessagePackSerializer.NonGeneric.Serialize(GetTypeForSerializer(obj), obj);
             }
         }
 
