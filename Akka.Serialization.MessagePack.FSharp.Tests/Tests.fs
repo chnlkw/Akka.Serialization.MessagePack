@@ -12,6 +12,19 @@ type SimpleUnion =
   | A
   | B of int
   | C of int64 * float32
+  
+[<Struct; MessagePackObject>]
+type StructUnion =
+    | E
+    | F of Prop1 : int
+    | G of Prop2 : int64 * Prop3: float32
+  
+[<MessagePackObject>]
+type Tree =
+  | Leaf of int
+  | Node of Tree * Tree
+
+type StringKeyUnion = | D of Prop : int
 
 [<AbstractClass>]
 type FsharpTests(serializerType : Type) =
@@ -49,5 +62,23 @@ type FsharpTests(serializerType : Type) =
         __.check <| B 100
         __.check <| C(99999999L, -123.43f)
 
-type MsgPackFSharpTEsts() =
+        
+    [<Fact>]
+    member __.``string key`` () =
+        __.check <| D 1
+
+    [<Fact>]
+    member __.``Can Serialize Tree DU`` () =
+
+        __.check <| Leaf 1
+        __.check <| Node (Leaf 2, Leaf 3)
+        __.check <| Node (Node (Leaf 4, Leaf 5), Leaf 6)
+
+    [<Fact>]
+    member __.``struct `` () =
+        __.check E
+        __.check <| F 100
+        __.check <| G (99999999L, -123.43f)
+
+type MsgPackFSharpTests() =
     inherit FsharpTests(typeof<MsgPackSerializer>)
