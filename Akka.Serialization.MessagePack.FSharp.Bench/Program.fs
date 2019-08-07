@@ -60,21 +60,32 @@ type SerializationBenchmarks() =
     let v_r = {record.A = 1; B = 1.0}
     let v_i = 1
 
-    let msgPackSerializer = new MsgPackSerializer(system.AsInstanceOf<ExtendedActorSystem>())
-    let msgPackFSharpSerializer = new MsgPackFSharpSerializer(system.AsInstanceOf<ExtendedActorSystem>())
-    let newtonSoftJsonSerializer = new NewtonSoftJsonSerializer(system.AsInstanceOf<ExtendedActorSystem>());
+    let serializerFactory = [|
+            fun () -> new MsgPackSerializer(system.AsInstanceOf<ExtendedActorSystem>()) :> Serializer;
+            fun () -> new MsgPackFSharpSerializer(system.AsInstanceOf<ExtendedActorSystem>())  :> Serializer;
+            fun () -> new NewtonSoftJsonSerializer(system.AsInstanceOf<ExtendedActorSystem>()) :> Serializer
+        |]
 
-    let convert (serializer : Serializer) (x:'a) =
-        let bytes = serializer.ToBinary x 
-        serializer.FromBinary<'a> bytes
+    [<Params(0,1,2)>]
+    member val public serializer_id = 0 with get, set
 
-    let msgconvert (x: 'a) =
-        let bin = MessagePackSerializer.Serialize(x)
-        MessagePackSerializer.Deserialize<'a>(bin)
+    member val serializer : Serializer = null
 
-    let msgconvert_nongeneric (x: 'a) =
-        let bin = MessagePackSerializer.NonGeneric.Serialize(typeof<'a>, x)
-        MessagePackSerializer.NonGeneric.Deserialize(typeof<'a>, bin) :?> 'a
+    [<GlobalSetup>]
+    member self.SetupData () =
+        self.serializer = serializerFactory.[self.serializer_id] ()
+
+    member self.convert (x:'a) =
+        let bytes = self.serializer.ToBinary x 
+        self.serializer.FromBinary<'a> bytes
+
+//    let msgconvert (x: 'a) =
+//        let bin = MessagePackSerializer.Serialize(x)
+//        MessagePackSerializer.Deserialize<'a>(bin)
+//
+//    let msgconvert_nongeneric (x: 'a) =
+//        let bin = MessagePackSerializer.NonGeneric.Serialize(typeof<'a>, x)
+//        MessagePackSerializer.NonGeneric.Deserialize(typeof<'a>, bin) :?> 'a
 
 //    [<Benchmark>]
 //    member self.Direct_serialize_record () =
@@ -122,7 +133,7 @@ type SerializationBenchmarks() =
 //
     [<Benchmark>]
     member self.MsgPack_serialize_du () =
-        convert msgPackSerializer  v_a
+        self.convert v_a
 //        
 //    [<Benchmark>]
 //    member self.MsgPackFSharp_serialize_du () =
